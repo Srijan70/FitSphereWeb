@@ -24,10 +24,35 @@
       <input type="password" id="loginPassword">
     </div>
     <button class="btn" id="loginBtn">Log In</button>
+    <div class="auth-switch">
+  <a id="showForgot">Forgot Password?</a>
+</div>
     <div class="auth-switch">New here? <a id="showRegister">Create an account</a></div>
   </div>
 
   <!-- ===================== REGISTER CARD ===================== -->
+   <!-- ===================== FORGOT PASSWORD CARD ===================== -->
+<div class="auth-card hidden" id="forgotCard">
+  <div class="auth-logo" style="font-size:22px;">Reset your password</div>
+
+  <div class="error-msg hidden" id="forgotError"></div>
+
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="forgotEmail" placeholder="you@example.com">
+  </div>
+
+  <div class="field">
+    <label>New Password</label>
+    <input type="password" id="forgotPassword" placeholder="Enter new password">
+  </div>
+
+  <button class="btn" id="forgotBtn">Reset Password</button>
+
+  <div class="auth-switch">
+    Remember your password? <a id="backToLogin">Log in</a>
+  </div>
+</div>
   <div class="auth-card wide hidden" id="registerCard">
     <div class="auth-logo" style="font-size:22px;">Create your FitSphere profile</div>
     <div class="error-msg hidden" id="registerError"></div>

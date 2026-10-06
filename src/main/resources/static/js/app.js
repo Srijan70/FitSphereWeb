@@ -168,22 +168,128 @@ function renderRecommendation(resp) {
   const badge = document.getElementById("segmentBadge");
   badge.textContent = "Segment: " + resp.segment;
   badge.style.background = SEGMENT_COLORS[resp.segment] || "#4089ff";
+
   document.getElementById("recoExplanation").textContent = resp.explanation;
 
   const grid = document.getElementById("planGrid");
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+  const exercises = {
+    "Full Body Strength": [
+      "Squats — 3 × 10",
+      "Push-ups — 3 × 10",
+      "Dumbbell Rows — 3 × 10",
+      "Shoulder Press — 3 × 10"
+    ],
+
+    "Upper Body Strength": [
+      "Push-ups — 3 × 12",
+      "Dumbbell Rows — 3 × 10",
+      "Shoulder Press — 3 × 10",
+      "Biceps Curls — 3 × 12"
+    ],
+
+    "Lower Body Strength": [
+      "Squats — 3 × 10",
+      "Lunges — 3 × 10",
+      "Glute Bridges — 3 × 12",
+      "Calf Raises — 3 × 15"
+    ],
+
+    "HIIT Circuit": [
+      "Jumping Jacks — 3 × 30 sec",
+      "Mountain Climbers — 3 × 20",
+      "Bodyweight Squats — 3 × 15",
+      "High Knees — 3 × 30 sec"
+    ],
+
+    "Brisk Walking": [
+      "Brisk Walk — 25 min",
+      "Warm-up Walk — 5 min",
+      "Cool-down Walk — 5 min"
+    ],
+
+    "Running": [
+      "Warm-up Walk — 5 min",
+      "Easy Run — 20 min",
+      "Cool-down Walk — 5 min"
+    ],
+
+    "Cycling": [
+      "Warm-up Cycling — 5 min",
+      "Moderate Cycling — 20 min",
+      "Cool-down Cycling — 5 min"
+    ],
+
+    "Swimming": [
+      "Warm-up — 5 min",
+      "Freestyle Swimming — 20 min",
+      "Cool-down — 5 min"
+    ],
+
+    "Core & Mobility": [
+      "Plank — 3 × 30 sec",
+      "Dead Bug — 3 × 10",
+      "Bird Dog — 3 × 10",
+      "Hip Mobility — 5 min"
+    ],
+
+    "Yoga / Stretching": [
+      "Cat-Cow Stretch — 2 × 10",
+      "Child's Pose — 3 × 30 sec",
+      "Hamstring Stretch — 3 × 30 sec",
+      "Shoulder Stretch — 3 × 30 sec"
+    ],
+
+    "Rest / Active Recovery": [
+      "Light Walking — 15 min",
+      "Full Body Stretching — 10 min",
+      "Mobility Exercises — 5 min"
+    ]
+  };
+
   grid.innerHTML = days.map(day => {
     const item = (resp.plan || []).find(p => p.dayOfWeek === day);
+
     if (!item) {
-      return `<div class="plan-day"><div class="day-label">${day}</div><div class="workout-type">-</div></div>`;
+      return `
+        <div class="plan-day">
+          <div class="day-label">${day}</div>
+          <div class="workout-type">-</div>
+        </div>`;
     }
-    const dots = "\u25CF".repeat(item.intensityLevel) + "\u25CB".repeat(5 - item.intensityLevel);
+
+    const dots =
+      "\u25CF".repeat(item.intensityLevel) +
+      "\u25CB".repeat(5 - item.intensityLevel);
+
+    const workoutExercises = exercises[item.workoutType] || [
+      "Warm-up — 5 min",
+      "Main workout — 20 min",
+      "Cool-down — 5 min"
+    ];
+
     return `
       <div class="plan-day">
         <div class="day-label">${day}</div>
-        <div class="workout-type">${item.workoutType}</div>
-        <div class="duration">${item.durationMinutes} min</div>
-        <div class="intensity">${dots}</div>
+
+        <div class="workout-type">
+          ${item.workoutType}
+        </div>
+
+        <div class="duration">
+          ${item.durationMinutes} min
+        </div>
+
+        <div class="intensity">
+          ${dots}
+        </div>
+
+        <div class="exercise-list">
+          ${workoutExercises.map(exercise =>
+            `<div class="exercise-item">${exercise}</div>`
+          ).join("")}
+        </div>
       </div>`;
   }).join("");
 }

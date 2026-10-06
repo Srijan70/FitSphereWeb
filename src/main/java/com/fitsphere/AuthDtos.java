@@ -39,4 +39,8 @@ class UserResponse {
         this.goal = u.getGoal();
         this.activityLevel = u.getActivityLevel();
     }
+    class ForgotPasswordRequest {
+    public String email;
+    public String newPassword;
+}
 }

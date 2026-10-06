@@ -198,6 +198,17 @@ table.data-table td { padding: 7px 6px; border-bottom: 1px solid var(--border); 
   border-radius: 10px;
   padding: 12px 8px;
   text-align: center;
+  .exercise-list {
+  margin-top: 12px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.exercise-item {
+  padding: 5px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
 }
 .plan-day .day-label { font-weight: 700; font-size: 13px; margin-bottom: 8px; }
 .plan-day .workout-type { font-size: 11px; margin-bottom: 6px; min-height: 30px; }

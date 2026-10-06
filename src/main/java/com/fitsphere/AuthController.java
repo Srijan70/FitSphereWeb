@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.fitsphere.UserResponse.ForgotPasswordRequest;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -64,4 +66,35 @@ public class AuthController {
     static java.util.Map<String, String> errorBody(String message) {
         return java.util.Collections.singletonMap("error", message);
     }
+    @PostMapping("/forgot-password")
+public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest req) {
+
+    if (req.email == null || req.email.isBlank()
+            || req.newPassword == null || req.newPassword.isBlank()) {
+        return ResponseEntity.badRequest()
+                .body(errorBody("Please enter your email and new password."));
+    }
+
+    if (!userDAO.emailExists(req.email)) {
+        return ResponseEntity.badRequest()
+                .body(errorBody("No account found with this email."));
+    }
+
+    boolean updated = userDAO.updatePasswordByEmail(
+            req.email,
+            req.newPassword
+    );
+
+    if (!updated) {
+        return ResponseEntity.badRequest()
+                .body(errorBody("Unable to reset password."));
+    }
+
+    return ResponseEntity.ok(
+            java.util.Collections.singletonMap(
+                    "message",
+                    "Password reset successfully."
+            )
+    );
+}
 }

@@ -60,4 +60,9 @@ public class UserDAO {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM users WHERE email=?", Integer.class, email);
         return count != null && count > 0;
     }
+    public boolean updatePasswordByEmail(String email, String newPassword) {
+    String sql = "UPDATE users SET password=? WHERE email=?";
+    int rows = jdbc.update(sql, newPassword, email);
+    return rows > 0;
+}
 }
