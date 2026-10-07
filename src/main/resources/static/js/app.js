@@ -150,148 +150,337 @@ async function loadInsights() {
 }
 
 // ---------------- Recommendations ----------------
+// ---------------- Recommendations ----------------
+
 async function loadRecommendations() {
+
   const resp = await Api.get("/api/recommendation/current");
+
   renderRecommendation(resp);
 
   document.getElementById("generatePlanBtn").onclick = async () => {
+
     try {
+
       const result = await Api.post("/api/recommendation/generate");
+
       renderRecommendation(result);
+
     } catch (e) {
+
       alert(e.message);
+
     }
+
   };
 }
 
-function renderRecommendation(resp) {
-  const badge = document.getElementById("segmentBadge");
-  badge.textContent = "Segment: " + resp.segment;
-  badge.style.background = SEGMENT_COLORS[resp.segment] || "#4089ff";
 
-  document.getElementById("recoExplanation").textContent = resp.explanation;
+function renderRecommendation(resp) {
+
+  const badge = document.getElementById("segmentBadge");
+
+  badge.textContent = "Segment: " + resp.segment;
+
+  badge.style.background =
+    SEGMENT_COLORS[resp.segment] || "#4089ff";
+
+
+  document.getElementById("recoExplanation").textContent =
+    resp.explanation;
+
 
   const grid = document.getElementById("planGrid");
-  const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+  const days = [
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+    "SAT",
+    "SUN"
+  ];
+
+
+  /*
+   * ============================================================
+   * MUSCLE GAIN - 5 DAY PPL
+   * ============================================================
+   */
 
   const exercises = {
-    "Full Body Strength": [
-      "Squats — 3 × 10",
-      "Push-ups — 3 × 10",
-      "Dumbbell Rows — 3 × 10",
-      "Shoulder Press — 3 × 10"
+
+    "Push": [
+      "Incline DB Press — 3 × 8–12",
+      "Bench Press — 3 × 8–12",
+      "Pec Dec Fly — 3 × 10–15",
+      "Lateral Raise — 3 × 12–15",
+      "V-Bar Pushdown — 3 × 10–15",
+      "Overhead Tricep Extension — 3 × 10–15"
     ],
 
-    "Upper Body Strength": [
-      "Push-ups — 3 × 12",
-      "Dumbbell Rows — 3 × 10",
-      "Shoulder Press — 3 × 10",
-      "Biceps Curls — 3 × 12"
+
+    "Pull + Abs": [
+      "Lat Pulldown — 3 × 8–12",
+      "Bent-Over Barbell Row in Smith Machine — 3 × 8–12",
+      "Low Row Machine Chest Supported — 3 × 8–12",
+      "Rear Delt Fly — 3 × 12–15",
+      "EZ-Bar Curl — 3 × 10–12",
+      "Hammer Curl — 3 × 10–12",
+      "Cable Crunch — 3 × 12–15"
     ],
 
-    "Lower Body Strength": [
-      "Squats — 3 × 10",
-      "Lunges — 3 × 10",
-      "Glute Bridges — 3 × 12",
-      "Calf Raises — 3 × 15"
+
+    "Legs": [
+      "Squat — 3 × 5–8",
+      "Romanian Deadlift — 3 × 6–10",
+      "Hack Squat — 3 × 8–12",
+      "Leg Curl — 3 × 8–12",
+      "Leg Extension — 2 × 10–15",
+      "Calf Raise — 3 × 8–15"
     ],
 
-    "HIIT Circuit": [
-      "Jumping Jacks — 3 × 30 sec",
-      "Mountain Climbers — 3 × 20",
-      "Bodyweight Squats — 3 × 15",
-      "High Knees — 3 × 30 sec"
+
+    "Chest + Shoulders + Triceps": [
+      "Incline Machine Press — 3 × 8–12",
+      "Low to High DB Fly — 3 × 10–15",
+      "Shoulder Press — 3 × 8–12",
+      "Cable Lateral Raise — 3 × 12–15",
+      "V-Bar Tricep Pushdown — 3 × 10–15",
+      "Skull Crushers / Overhead Extension — 3 × 10–15",
+      "Pec Dec — 3 × 10–15"
     ],
 
-    "Brisk Walking": [
-      "Brisk Walk — 25 min",
-      "Warm-up Walk — 5 min",
-      "Cool-down Walk — 5 min"
+
+    "Back + Biceps + Abs": [
+      "Lat Pulldown — 3 × 8–12",
+      "Close-Grip Lat Pulldown — 3 × 8–12",
+      "T-Bar Row — 3 × 8–12",
+      "Neutral-Grip Seated Row — 3 × 8–12",
+      "Cable Pullover — 3 × 10–15",
+      "Face Pull — 3 × 12–15",
+      "EZ-Bar Curl — 3 × 10–12",
+      "Hammer Curl — 3 × 10–12",
+      "Cable Crunch — 3 × 12–15"
     ],
 
-    "Running": [
-      "Warm-up Walk — 5 min",
-      "Easy Run — 20 min",
-      "Cool-down Walk — 5 min"
+
+    /*
+     * ============================================================
+     * UPPER / LOWER
+     * WEIGHT LOSS + ENDURANCE
+     * ============================================================
+     */
+
+    "Upper A": [
+      "Incline DB Press — 3 × 10–15",
+      "Lat Pulldown — 3 × 10–15",
+      "Seated Chest Press — 3 × 10–15",
+      "Seated Cable Row — 3 × 10–15",
+      "Cable Lateral Raise — 3 × 12–15",
+      "Face Pull — 3 × 12–15",
+      "Rope Pushdown — 2 × 12–15",
+      "Cable Curl — 2 × 12–15"
     ],
 
-    "Cycling": [
-      "Warm-up Cycling — 5 min",
-      "Moderate Cycling — 20 min",
-      "Cool-down Cycling — 5 min"
+
+    "Lower A": [
+      "Hack Squat — 3 × 10–15",
+      "Romanian Deadlift — 3 × 8–12",
+      "Leg Press — 3 × 12–15",
+      "Leg Curl — 3 × 12–15",
+      "Leg Extension — 2 × 12–15",
+      "Calf Raise — 3 × 12–20"
     ],
 
-    "Swimming": [
-      "Warm-up — 5 min",
-      "Freestyle Swimming — 20 min",
-      "Cool-down — 5 min"
+
+    "Upper B": [
+      "Machine Chest Press — 3 × 10–15",
+      "Close-Grip Lat Pulldown — 3 × 10–15",
+      "Incline DB Press — 3 × 10–15",
+      "Chest-Supported Row — 3 × 10–15",
+      "Rear Delt Fly — 3 × 12–15",
+      "Lateral Raise — 3 × 12–15",
+      "Overhead Tricep Extension — 2 × 12–15",
+      "Hammer Curl — 2 × 12–15"
     ],
 
-    "Core & Mobility": [
-      "Plank — 3 × 30 sec",
-      "Dead Bug — 3 × 10",
-      "Bird Dog — 3 × 10",
-      "Hip Mobility — 5 min"
+
+    "Lower B": [
+      "Squat — 3 × 8–12",
+      "Leg Press — 3 × 12–15",
+      "Romanian Deadlift — 3 × 8–12",
+      "Leg Curl — 3 × 12–15",
+      "Leg Extension — 2 × 12–15",
+      "Calf Raise — 3 × 15–20",
+      "Cable Crunch — 3 × 12–15"
     ],
 
-    "Yoga / Stretching": [
-      "Cat-Cow Stretch — 2 × 10",
-      "Child's Pose — 3 × 30 sec",
-      "Hamstring Stretch — 3 × 30 sec",
-      "Shoulder Stretch — 3 × 30 sec"
+
+    /*
+     * ============================================================
+     * MAINTENANCE - 3 DAY FULL BODY
+     * ============================================================
+     */
+
+    "Full Body A": [
+      "Squat — 3 × 8–12",
+      "Incline DB Press — 3 × 8–12",
+      "Lat Pulldown — 3 × 8–12",
+      "Seated Cable Row — 3 × 10–12",
+      "Lateral Raise — 2 × 12–15",
+      "Leg Curl — 2 × 10–15",
+      "Cable Crunch — 3 × 12–15"
     ],
 
-    "Rest / Active Recovery": [
+
+    "Full Body B": [
+      "Hack Squat — 3 × 8–12",
+      "Machine Chest Press — 3 × 8–12",
+      "Close-Grip Lat Pulldown — 3 × 8–12",
+      "Chest-Supported Row — 3 × 8–12",
+      "Shoulder Press — 2 × 8–12",
+      "Leg Extension — 2 × 12–15",
+      "EZ-Bar Curl — 3 × 10–12",
+      "V-Bar Pushdown — 3 × 10–12"
+    ],
+
+
+    "Full Body C": [
+      "Leg Press — 3 × 10–15",
+      "Incline Machine Press — 3 × 8–12",
+      "T-Bar Row — 3 × 8–12",
+      "Romanian Deadlift — 3 × 8–12",
+      "Cable Lateral Raise — 2 × 12–15",
+      "Hammer Curl — 3 × 10–12",
+      "Overhead Tricep Extension — 3 × 10–12",
+      "Calf Raise — 3 × 12–20",
+      "Cable Crunch — 3 × 12–15"
+    ],
+
+
+    /*
+     * ============================================================
+     * REST DAYS
+     * ============================================================
+     */
+
+    "Active Rest": [
       "Light Walking — 15 min",
       "Full Body Stretching — 10 min",
       "Mobility Exercises — 5 min"
+    ],
+
+
+    "Rest": [
+      "Rest and recovery",
+      "Light stretching if required",
+      "Stay hydrated"
     ]
+
   };
 
+
+  /*
+   * ============================================================
+   * CREATE 7 DAY PLAN
+   * ============================================================
+   */
+
   grid.innerHTML = days.map(day => {
-    const item = (resp.plan || []).find(p => p.dayOfWeek === day);
+
+    const item =
+      (resp.plan || []).find(p => p.dayOfWeek === day);
+
 
     if (!item) {
+
       return `
         <div class="plan-day">
-          <div class="day-label">${day}</div>
-          <div class="workout-type">-</div>
-        </div>`;
+
+          <div class="day-label">
+            ${day}
+          </div>
+
+          <div class="workout-type">
+            -
+          </div>
+
+        </div>
+      `;
+
     }
 
-    const dots =
-      "\u25CF".repeat(item.intensityLevel) +
-      "\u25CB".repeat(5 - item.intensityLevel);
 
-    const workoutExercises = exercises[item.workoutType] || [
-      "Warm-up — 5 min",
-      "Main workout — 20 min",
-      "Cool-down — 5 min"
-    ];
+    /*
+     * Intensity indicator
+     * Example:
+     * 3/5 → ●●●○○
+     */
+
+    const safeIntensity =
+      Math.max(1, Math.min(5, item.intensityLevel));
+
+    const dots =
+      "●".repeat(safeIntensity) +
+      "○".repeat(5 - safeIntensity);
+
+
+    /*
+     * Find exercises for this workout.
+     */
+
+    const workoutExercises =
+      exercises[item.workoutType] || [
+        "Warm-up — 5 min",
+        "Main workout — 20 min",
+        "Cool-down — 5 min"
+      ];
+
 
     return `
+
       <div class="plan-day">
-        <div class="day-label">${day}</div>
+
+        <div class="day-label">
+          ${day}
+        </div>
+
 
         <div class="workout-type">
           ${item.workoutType}
         </div>
 
+
         <div class="duration">
           ${item.durationMinutes} min
         </div>
+
 
         <div class="intensity">
           ${dots}
         </div>
 
+
         <div class="exercise-list">
+
           ${workoutExercises.map(exercise =>
-            `<div class="exercise-item">${exercise}</div>`
+
+            `<div class="exercise-item">
+              ${exercise}
+            </div>`
+
           ).join("")}
+
         </div>
-      </div>`;
+
+      </div>
+
+    `;
+
   }).join("");
+
 }
 
 // ---------------- Profile ----------------

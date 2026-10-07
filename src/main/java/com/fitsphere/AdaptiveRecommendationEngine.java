@@ -1,176 +1,411 @@
 package com.fitsphere;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 /**
- * Generates a personalized, adaptive weekly workout plan.
+ * Generates a personalized adaptive weekly workout plan.
  *
- * Adaptivity comes from a simple feedback-control loop: recent adherence
- * (completion rate) and average self-rated intensity feedback push the
- * plan's difficulty up, down, or hold it steady - similar in spirit to a
- * reinforcement-learning reward signal driving policy adjustment.
+ * Goal determines the weekly training split:
+ * MUSCLE_GAIN  -> 5-day Push/Pull/Legs based split
+ * WEIGHT_LOSS  -> 4-day Upper/Lower split
+ * MAINTENANCE  -> 3-day Full Body split
+ * ENDURANCE    -> 4-day Upper/Lower split
  *
- * Day-by-day workout selection uses WorkoutCatalog's content-based scoring
- * with an epsilon-greedy exploration step, so the plan stays varied instead
- * of always picking the single top-scoring workout.
+ * Fitness segment, recent adherence and intensity rating are still used
+ * to adjust workout intensity and duration.
  */
 public class AdaptiveRecommendationEngine {
 
-    private static final String[] DAYS = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
-    private static final double EPSILON = 0.2; // 20% chance to explore instead of exploit
-    private static final int RECENT_WINDOW = 2; // days to look back for repetition penalty
+    private static final String[] DAYS = {
+            "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
+    };
 
     public static class RecommendationResult {
         public String segment;
         public double adherenceRate;
         public double avgRating;
-        public String direction;       // "increase", "maintain", "decrease"
+        public String direction;
         public String explanation;
         public List<WorkoutPlanItem> weeklyPlan;
     }
 
-    public static RecommendationResult generate(User user, List<ActivityLog> recentLogs, String segment) {
+    public static RecommendationResult generate(
+            User user,
+            List<ActivityLog> recentLogs,
+            String segment) {
 
         RecommendationResult result = new RecommendationResult();
+
         result.segment = segment;
 
+        // Analyse recent activity
         double adherence = computeAdherence(recentLogs);
         double avgRating = computeAvgRating(recentLogs);
+
         String direction = decideAdjustment(adherence, avgRating);
 
         result.adherenceRate = adherence;
         result.avgRating = avgRating;
         result.direction = direction;
 
+        // Base intensity and duration depend on fitness segment
         int baseIntensity = segmentBaseIntensity(segment);
         int baseDuration = segmentBaseDuration(segment);
 
+        // Adapt based on recent performance
         int intensity = applyIntensityAdjustment(baseIntensity, direction);
         int duration = applyDurationAdjustment(baseDuration, direction);
 
-        result.weeklyPlan = buildWeeklyPlan(user, segment, intensity, duration);
-        result.explanation = buildExplanation(segment, adherence, avgRating, direction);
+        // Build goal-specific weekly plan
+        result.weeklyPlan = buildWeeklyPlan(
+                user,
+                intensity,
+                duration
+        );
+
+        result.explanation = buildExplanation(
+                segment,
+                adherence,
+                avgRating,
+                direction
+        );
 
         return result;
     }
 
+    // ---------------------------------------------------------
+    // ADHERENCE
+    // ---------------------------------------------------------
+
     private static double computeAdherence(List<ActivityLog> logs) {
-        if (logs == null || logs.isEmpty()) return 0.5; // neutral default for brand-new users
-        long completed = logs.stream().filter(ActivityLog::isCompleted).count();
+
+        if (logs == null || logs.isEmpty()) {
+            return 0.5;
+        }
+
+        long completed = logs.stream()
+                .filter(ActivityLog::isCompleted)
+                .count();
+
         return (double) completed / logs.size();
     }
 
+    // ---------------------------------------------------------
+    // AVERAGE RATING
+    // ---------------------------------------------------------
+
     private static double computeAvgRating(List<ActivityLog> logs) {
-        if (logs == null || logs.isEmpty()) return 3.0;
+
+        if (logs == null || logs.isEmpty()) {
+            return 3.0;
+        }
+
         double sum = 0;
-        for (ActivityLog log : logs) sum += log.getIntensityRating();
+
+        for (ActivityLog log : logs) {
+            sum += log.getIntensityRating();
+        }
+
         return sum / logs.size();
     }
 
-    private static String decideAdjustment(double adherence, double avgRating) {
-        if (adherence >= 0.8 && avgRating >= 4.0) return "increase";
-        if (adherence < 0.5 || avgRating <= 2.0) return "decrease";
+    // ---------------------------------------------------------
+    // ADAPTATION DECISION
+    // ---------------------------------------------------------
+
+    private static String decideAdjustment(
+            double adherence,
+            double avgRating) {
+
+        if (adherence >= 0.8 && avgRating >= 4.0) {
+            return "increase";
+        }
+
+        if (adherence < 0.5 || avgRating <= 2.0) {
+            return "decrease";
+        }
+
         return "maintain";
     }
 
+    // ---------------------------------------------------------
+    // BASE INTENSITY
+    // ---------------------------------------------------------
+
     private static int segmentBaseIntensity(String segment) {
-        if ("Advanced".equals(segment)) return 4;
-        if ("Intermediate".equals(segment)) return 3;
-        return 2; // Beginner
+
+        if ("Advanced".equals(segment)) {
+            return 4;
+        }
+
+        if ("Intermediate".equals(segment)) {
+            return 3;
+        }
+
+        return 2;
     }
+
+    // ---------------------------------------------------------
+    // BASE DURATION
+    // ---------------------------------------------------------
 
     private static int segmentBaseDuration(String segment) {
-        if ("Advanced".equals(segment)) return 50;
-        if ("Intermediate".equals(segment)) return 40;
-        return 30; // Beginner
+
+        if ("Advanced".equals(segment)) {
+            return 50;
+        }
+
+        if ("Intermediate".equals(segment)) {
+            return 40;
+        }
+
+        return 30;
     }
 
-    private static int applyIntensityAdjustment(int base, String direction) {
-        if ("increase".equals(direction)) return Math.min(base + 1, 5);
-        if ("decrease".equals(direction)) return Math.max(base - 1, 1);
+    // ---------------------------------------------------------
+    // INTENSITY ADJUSTMENT
+    // ---------------------------------------------------------
+
+    private static int applyIntensityAdjustment(
+            int base,
+            String direction) {
+
+        if ("increase".equals(direction)) {
+            return Math.min(base + 1, 5);
+        }
+
+        if ("decrease".equals(direction)) {
+            return Math.max(base - 1, 1);
+        }
+
         return base;
     }
 
-    private static int applyDurationAdjustment(int base, String direction) {
-        if ("increase".equals(direction)) return Math.min(base + 10, 90);
-        if ("decrease".equals(direction)) return Math.max(base - 10, 15);
+    // ---------------------------------------------------------
+    // DURATION ADJUSTMENT
+    // ---------------------------------------------------------
+
+    private static int applyDurationAdjustment(
+            int base,
+            String direction) {
+
+        if ("increase".equals(direction)) {
+            return Math.min(base + 10, 90);
+        }
+
+        if ("decrease".equals(direction)) {
+            return Math.max(base - 10, 15);
+        }
+
         return base;
     }
 
-    private static List<WorkoutPlanItem> buildWeeklyPlan(User user, String segment, int intensity, int duration) {
+    // ---------------------------------------------------------
+    // BUILD WEEKLY PLAN
+    // ---------------------------------------------------------
+
+    private static List<WorkoutPlanItem> buildWeeklyPlan(
+            User user,
+            int intensity,
+            int duration) {
 
         List<WorkoutPlanItem> plan = new ArrayList<>();
-        LinkedList<String> recentTypes = new LinkedList<>();
-        Random rand = new Random();
 
-        int restDaySpacing = "Beginner".equals(segment) ? 3 : ("Intermediate".equals(segment) ? 4 : 6);
+        String goal = user.getGoal();
 
-        for (int i = 0; i < DAYS.length; i++) {
-            String day = DAYS[i];
+        /*
+         * MUSCLE GAIN
+         * 5-day PPL based split
+         */
+        if ("MUSCLE_GAIN".equalsIgnoreCase(goal)) {
 
-            boolean isRestDay = (i + 1) % restDaySpacing == 0;
+            add(plan, user, "MON",
+                    "Push", duration, intensity);
 
-            WorkoutCatalog.WorkoutType chosen;
+            add(plan, user, "TUE",
+                    "Pull + Abs", duration, intensity);
 
-            if (isRestDay) {
-                chosen = WorkoutCatalog.findByName("Rest / Active Recovery");
-            } else {
-                chosen = pickWorkout(user.getGoal(), segment, recentTypes, rand);
-            }
+            add(plan, user, "WED",
+                    "Legs", duration, intensity);
 
-            int itemDuration = chosen.category.equals("RECOVERY") ? Math.max(15, duration - 15) : duration;
+            add(plan, user, "THU",
+                    "Active Rest", 15, Math.max(1, intensity - 1));
 
-            plan.add(new WorkoutPlanItem(user.getUserId(), day, chosen.name, itemDuration, intensity));
+            add(plan, user, "FRI",
+                    "Chest + Shoulders + Triceps", duration, intensity);
 
-            recentTypes.addLast(chosen.name);
-            while (recentTypes.size() > RECENT_WINDOW) recentTypes.removeFirst();
+            add(plan, user, "SAT",
+                    "Back + Biceps + Abs", duration, intensity);
+
+            add(plan, user, "SUN",
+                    "Rest", 15, 1);
+
+            return plan;
         }
+
+        /*
+         * WEIGHT LOSS / FAT LOSS
+         * 4-day Upper / Lower split
+         */
+        if ("WEIGHT_LOSS".equalsIgnoreCase(goal)) {
+
+            add(plan, user, "MON",
+                    "Upper A", duration, intensity);
+
+            add(plan, user, "TUE",
+                    "Lower A", duration, intensity);
+
+            add(plan, user, "WED",
+                    "Active Rest", 15, Math.max(1, intensity - 1));
+
+            add(plan, user, "THU",
+                    "Upper B", duration, intensity);
+
+            add(plan, user, "FRI",
+                    "Active Rest", 15, Math.max(1, intensity - 1));
+
+            add(plan, user, "SAT",
+                    "Lower B", duration, intensity);
+
+            add(plan, user, "SUN",
+                    "Rest", 15, 1);
+
+            return plan;
+        }
+
+        /*
+         * ENDURANCE
+         * 4-day Upper / Lower split
+         */
+        if ("ENDURANCE".equalsIgnoreCase(goal)) {
+
+            add(plan, user, "MON",
+                    "Upper A", duration, intensity);
+
+            add(plan, user, "TUE",
+                    "Lower A", duration, intensity);
+
+            add(plan, user, "WED",
+                    "Active Rest", 15, Math.max(1, intensity - 1));
+
+            add(plan, user, "THU",
+                    "Upper B", duration, intensity);
+
+            add(plan, user, "FRI",
+                    "Active Rest", 15, Math.max(1, intensity - 1));
+
+            add(plan, user, "SAT",
+                    "Lower B", duration, intensity);
+
+            add(plan, user, "SUN",
+                    "Rest", 15, 1);
+
+            return plan;
+        }
+
+        /*
+         * MAINTENANCE / GENERAL FITNESS
+         * 3-day Full Body split
+         */
+        add(plan, user, "MON",
+                "Full Body A", duration, intensity);
+
+        add(plan, user, "TUE",
+                "Active Rest", 15, Math.max(1, intensity - 1));
+
+        add(plan, user, "WED",
+                "Full Body B", duration, intensity);
+
+        add(plan, user, "THU",
+                "Active Rest", 15, Math.max(1, intensity - 1));
+
+        add(plan, user, "FRI",
+                "Full Body C", duration, intensity);
+
+        add(plan, user, "SAT",
+                "Active Rest", 15, Math.max(1, intensity - 1));
+
+        add(plan, user, "SUN",
+                "Rest", 15, 1);
 
         return plan;
     }
 
-    /** Epsilon-greedy selection over content-based scores for variety. */
-    private static WorkoutCatalog.WorkoutType pickWorkout(String goal, String segment,
-                                                            List<String> recentTypes, Random rand) {
+    // ---------------------------------------------------------
+    // ADD PLAN ITEM
+    // ---------------------------------------------------------
 
-        List<WorkoutCatalog.WorkoutType> candidates = new ArrayList<>();
-        for (WorkoutCatalog.WorkoutType wt : WorkoutCatalog.ALL) {
-            if (!wt.category.equals("RECOVERY")) candidates.add(wt);
-        }
+    private static void add(
+            List<WorkoutPlanItem> plan,
+            User user,
+            String day,
+            String workoutType,
+            int duration,
+            int intensity) {
 
-        candidates.sort((a, b) -> Double.compare(
-                WorkoutCatalog.scoreForUser(b, goal, segment, recentTypes),
-                WorkoutCatalog.scoreForUser(a, goal, segment, recentTypes)));
-
-        if (rand.nextDouble() < EPSILON && candidates.size() > 1) {
-            // Explore: pick randomly among the top 3 rather than always the single best.
-            int topN = Math.min(3, candidates.size());
-            return candidates.get(rand.nextInt(topN));
-        }
-
-        return candidates.get(0); // Exploit: best-scoring workout
+        plan.add(
+                new WorkoutPlanItem(
+                        user.getUserId(),
+                        day,
+                        workoutType,
+                        duration,
+                        intensity
+                )
+        );
     }
 
-    private static String buildExplanation(String segment, double adherence, double avgRating, String direction) {
+    // ---------------------------------------------------------
+    // EXPLANATION
+    // ---------------------------------------------------------
+
+    private static String buildExplanation(
+            String segment,
+            double adherence,
+            double avgRating,
+            String direction) {
+
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Segment: %s | Adherence: %.0f%% | Avg. rating: %.1f/5\n\n", segment, adherence * 100, avgRating));
+
+        sb.append(String.format(
+                "Segment: %s | Adherence: %.0f%% | Avg. rating: %.1f/5\n\n",
+                segment,
+                adherence * 100,
+                avgRating
+        ));
 
         switch (direction) {
+
             case "increase":
-                sb.append("Great consistency! Since you completed most sessions with strong ratings, ")
-                  .append("this week's intensity and duration have been nudged up to keep challenging you.");
+
+                sb.append(
+                        "Great consistency! Since you completed most sessions "
+                                + "with strong ratings, this week's intensity and "
+                                + "duration have been increased slightly."
+                );
+
                 break;
+
             case "decrease":
-                sb.append("It looks like recent sessions were tough to complete or rated low, so this week's ")
-                  .append("plan has been eased up in intensity and duration to help you rebuild momentum.");
+
+                sb.append(
+                        "Recent sessions were difficult to complete or had lower "
+                                + "ratings, so this week's intensity and duration "
+                                + "have been reduced to help you recover and stay consistent."
+                );
+
                 break;
+
             default:
-                sb.append("You're holding a steady pace. This week's plan keeps the same intensity and duration ")
-                  .append("as before while introducing some variety.");
+
+                sb.append(
+                        "You're maintaining a steady pace. This week's plan "
+                                + "keeps the current intensity and duration."
+                );
+
+                break;
         }
+
         return sb.toString();
     }
 }
